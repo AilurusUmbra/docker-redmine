@@ -1,5 +1,71 @@
 # Changelog
 
+**4.1.1-2**
+- Update ImageMagick policy to allow PDF read for thumbnail generation. (#421)
+
+**4.1.1-1**
+- Install ghostscript to enable ImageMagick PDF support #420
+- Fix bundler deprecation warnings #417
+
+**4.1.1**
+- redmine: upgrade to v4.1.1
+
+**4.1.0**
+- redmine: upgrade to v4.1.0
+
+**4.0.5**
+- redmine: upgrade to v4.0.5
+- Fix "CRIT Server 'unix_http_server' running without any HTTP authentication checking"
+
+**4.0.4**
+- redmine: upgrade to v4.0.4
+
+**4.0.3-2**
+- Fix logrotate. Issue #402
+
+**4.0.3-1**
+- Update xenial to 20190222. PR: #397
+
+**4.0.3**
+- redmine: upgrade to v4.0.3
+
+**4.0.2**
+- redmine: upgrade to v4.0.2
+
+**4.0.1**
+- redmine: upgrade to v4.0.1
+
+**4.0.0-3**
+- Fix unicorn crash by avoiding version 5.5.0, Issue #292
+
+**4.0.0-2**
+- Improve cipher suite, based on Mozilla's TLS recommendations. Issue #226
+- Fix to avoid adding double "secure" flags for cookies. Issue #297
+
+**4.0.0-1**
+- Fix REDMINE_FETCH_COMMITS for redmine 4.x
+
+**4.0.0**
+- redmine: upgrade to v.4.0.0
+- Fix function tmp:sessions:clear
+- Update ruby to v2.4
+- Support single quotes in yaml to fix issue #378
+
+**3.4.7-1**
+- Fix app:backup:create by installing latest postgresql-client. Issue #364
+
+**3.4.7**
+- redmine: upgrade to v3.4.7
+- Update mysql image
+- Update memcache image
+- Update postgresql image
+- switch to `ubuntu:trusty-20180712` base image
+- renamed `REDMINE_CACHE_DIR` to `REDMINE_ASSETS_DIR`, `REDMINE_BUILD_DIR` to `REDMINE_BUILD_ASSETS_DIR`, `REDMINE_RUNTIME_DIR` to `REDMINE_RUNTIME_ASSETS_DIR`
+- upgrade to `ubuntu:xenial-20180705`
+- Add: IMAP configuration parameter PROJECT_FROM_SUBADRESS
+- Fix mysql version in docker-compose-mysql.yml
+- Comment out pam_loginuid.so so cron jobs work
+
 **3.4.6**
 - redmine: upgrade to v3.4.6
 

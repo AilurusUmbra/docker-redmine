@@ -77,7 +77,8 @@ fi
   echo "${PG_GEM}";
   echo "${MYSQL2_GEM}";
   echo "${SQLITE3_GEM}";
-  echo 'gem "unicorn"';
+  echo '# unicorn 5.5.0 has a bug in unicorn_rails. See issue #392';
+  echo 'gem "unicorn", "~> 5.4", "!=5.5.0"';
   echo 'gem "dalli", "~> 2.7.0"';
 ) >> ${REDMINE_INSTALL_DIR}/Gemfile
 
@@ -92,7 +93,9 @@ if [[ -d ${GEM_CACHE_DIR} ]]; then
   cp -a ${GEM_CACHE_DIR} ${REDMINE_INSTALL_DIR}/vendor/cache
   chown -R ${REDMINE_USER}: ${REDMINE_INSTALL_DIR}/vendor/cache
 fi
-exec_as_redmine bundle install -j$(nproc) --without development test --path ${REDMINE_INSTALL_DIR}/vendor/bundle
+exec_as_redmine bundle config set path "${REDMINE_INSTALL_DIR}/vendor/bundle"
+exec_as_redmine bundle config set without development test
+exec_as_redmine bundle install -j$(nproc)
 
 # finalize redmine installation
 exec_as_redmine mkdir -p ${REDMINE_INSTALL_DIR}/tmp ${REDMINE_INSTALL_DIR}/tmp/pdf ${REDMINE_INSTALL_DIR}/tmp/pids ${REDMINE_INSTALL_DIR}/tmp/sockets
@@ -124,9 +127,14 @@ sed -i \
   -e "s|error_log /var/log/nginx/error.log;|error_log ${REDMINE_LOG_DIR}/nginx/error.log;|" \
   /etc/nginx/nginx.conf
 
+# Set log rotate to use root:utmp to match permissions in /var/log
+# Fixes issue #402
+sed -i 's|su root syslog|su root utmp|' /etc/logrotate.conf
+
 # setup log rotation for redmine application logs
 cat > /etc/logrotate.d/redmine <<EOF
 ${REDMINE_LOG_DIR}/redmine/*.log {
+  su root redmine
   weekly
   missingok
   rotate 52
@@ -140,6 +148,7 @@ EOF
 # setup log rotation for redmine vhost logs
 cat > /etc/logrotate.d/redmine-vhost <<EOF
 ${REDMINE_LOG_DIR}/nginx/*.log {
+  su redmine redmine
   weekly
   missingok
   rotate 52
@@ -153,6 +162,7 @@ EOF
 # configure supervisord log rotation
 cat > /etc/logrotate.d/supervisord <<EOF
 ${REDMINE_LOG_DIR}/supervisor/*.log {
+  su root redmine
   weekly
   missingok
   rotate 52
@@ -203,6 +213,15 @@ autorestart=true
 stdout_logfile=${REDMINE_LOG_DIR}/supervisor/%(program_name)s.log
 stderr_logfile=${REDMINE_LOG_DIR}/supervisor/%(program_name)s.log
 EOF
+
+# silence "CRIT Server 'unix_http_server' running without any HTTP authentication checking" message
+# https://github.com/Supervisor/supervisor/issues/717
+sed -i '/\.sock/a password=dummy' /etc/supervisor/supervisord.conf
+sed -i '/\.sock/a username=dummy' /etc/supervisor/supervisord.conf
+
+# update ImageMagick policy to allow PDF read for thumbnail generation.
+# https://github.com/sameersbn/docker-redmine/pull/421
+sed -i 's/ domain="coder" rights="none" pattern="PDF" / domain="coder" rights="read" pattern="PDF" /g' /etc/ImageMagick-*/policy.xml
 
 # purge build dependencies and cleanup apt
 apt-get purge -y --auto-remove ${BUILD_DEPENDENCIES}

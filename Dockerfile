@@ -1,4 +1,4 @@
-FROM ubuntu:xenial-20180705 AS add-apt-repositories
+FROM ubuntu:xenial-20190222 AS add-apt-repositories
 
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y wget \
@@ -11,12 +11,12 @@ RUN apt-get update \
  && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
  && echo 'deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main' > /etc/apt/sources.list.d/pgdg.list
 
-FROM ubuntu:xenial-20180705
+FROM ubuntu:xenial-20190222
 
 LABEL maintainer="sameer@damagehead.com"
 
-ENV RUBY_VERSION=2.3 \
-    REDMINE_VERSION=3.4.6 \
+ENV RUBY_VERSION=2.4 \
+    REDMINE_VERSION=4.1.1 \
     REDMINE_USER="redmine" \
     REDMINE_HOME="/home/redmine" \
     REDMINE_LOG_DIR="/var/log/redmine" \
@@ -31,6 +31,7 @@ ENV REDMINE_INSTALL_DIR="${REDMINE_HOME}/redmine" \
 COPY --from=add-apt-repositories /etc/apt/trusted.gpg /etc/apt/trusted.gpg
 
 COPY --from=add-apt-repositories /etc/apt/sources.list /etc/apt/sources.list
+COPY --from=add-apt-repositories /etc/apt/sources.list.d/pgdg.list /etc/apt/sources.list.d/
 
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
@@ -38,7 +39,7 @@ RUN apt-get update \
       imagemagick subversion git cvs bzr mercurial darcs rsync ruby${RUBY_VERSION} locales openssh-client \
       gcc g++ make patch pkg-config gettext-base ruby${RUBY_VERSION}-dev libc6-dev zlib1g-dev libxml2-dev \
       libmysqlclient20 libpq5 libyaml-0-2 libcurl3 libssl1.0.0 uuid-dev xz-utils \
-      libxslt1.1 libffi6 zlib1g gsfonts sqlite3 libsqlite3-dev \
+      libxslt1.1 libffi6 zlib1g gsfonts vim-tiny ghostscript sqlite3 libsqlite3-dev \
  && update-locale LANG=C.UTF-8 LC_MESSAGES=POSIX \
  && gem install --no-document bundler \
  && rm -rf /var/lib/apt/lists/*
@@ -53,7 +54,8 @@ COPY assets/tools/ /usr/bin/
 
 COPY entrypoint.sh /sbin/entrypoint.sh
 
-RUN chmod 755 /sbin/entrypoint.sh
+RUN chmod 755 /sbin/entrypoint.sh \
+ && sed -i '/session    required     pam_loginuid.so/c\#session    required   pam_loginuid.so' /etc/pam.d/cron
 
 EXPOSE 80/tcp 443/tcp
 
